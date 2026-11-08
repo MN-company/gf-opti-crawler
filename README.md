@@ -1,6 +1,6 @@
-# Recipe Data Pipeline (v0.8.2 beta)
+# GF Opti Crawler (v0.8.2 beta)
 
-**Unofficial, independent research project. Not affiliated with GialloZafferano.**
+**Crawler dedicato a GialloZafferano.** Progetto indipendente, non ufficiale e non affiliato a GialloZafferano. La compatibilità con altri siti non è stata verificata.
 
 This repository distributes crawler source code only, not collected recipes or source HTML. Respect the target website's terms, robots.txt and content rights. Do not publish scraped datasets without authorization.
 
