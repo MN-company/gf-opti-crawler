@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+*.pyc
+data/*
+!data/.gitkeep
+
+.env
+
+# Third-party page fixtures and exports (not redistributable)
+Lasagne-al-forno.html
+Hummus-senza-tahina.html
+*.sqlite
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+*.zip
+*.jsonl
