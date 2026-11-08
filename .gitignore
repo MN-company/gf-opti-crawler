@@ -1,18 +1,27 @@
+# Local environments and credentials
 .venv/
-__pycache__/
-*.pyc
-data/*
-!data/.gitkeep
-
+venv/
 .env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
 
-# Third-party page fixtures and exports (not redistributable)
-Lasagne-al-forno.html
-Hummus-senza-tahina.html
+# Persistent crawler data, exports and backups
+/data/*
+!/data/.gitkeep
 *.sqlite
 *.sqlite3
+*.sqlite3-*
 *.db
 *.db-wal
 *.db-shm
-*.zip
 *.jsonl
+*.log
+*.zip
+
+# Third-party HTML fixtures are local-only and must not be committed
+Lasagne-al-forno.html
+Hummus-senza-tahina.html

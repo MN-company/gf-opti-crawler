@@ -1,8 +1,10 @@
-# GF Opti Crawler (v0.8.2 beta)
+# GF Opti Crawler — GialloZafferano (v0.8.2 beta)
 
-**Crawler dedicato a GialloZafferano.** Progetto indipendente, non ufficiale e non affiliato a GialloZafferano. La compatibilità con altri siti non è stata verificata.
+**Crawler sperimentale dedicato alle ricette di GialloZafferano.** Progetto indipendente e non ufficiale, **non affiliato** al sito. Non è un crawler universale: il supporto ad altri siti non è stato verificato.
 
-This repository distributes crawler source code only, not collected recipes or source HTML. Respect the target website's terms, robots.txt and content rights. Do not publish scraped datasets without authorization.
+**Scope:** extraction of structured textual recipe metadata, sitemap and category discovery, asynchronous HTTP fetching, SQLite storage, quality checks and optional browser fallback. Tested offline; production behavior can differ as the site evolves.
+
+This repository contains **source code only**: no scraped recipes, photos, downloaded HTML, credentials or collected database. Source code is licensed under the **MIT License**; that license does not cover third-party content. Respect applicable terms of use, `robots.txt`, access restrictions and content rights. **Robots.txt compliance is not by itself permission to scrape or republish data.**
 
 **Known limitations:** No guarantee of whole-site coverage; some one-ingredient recipes and technique guides may be marked `review`; prior production data may contain legacy alias chains (the new resolver handles these). No live production crawl was run for this release.
 
@@ -13,21 +15,28 @@ This repository distributes crawler source code only, not collected recipes or s
 - Browser iframe documents and redirects now use the shared host request limiter; only the first main-frame navigation is pre-reserved.
 - No change to ingredient quality threshold; the 62 `review` records are deliberately not silently accepted.
 
-## Publishing and local data
+## Source code, tests and contributions
+
+- Python 3.12; runtime dependencies pinned in `requirements.txt`.
+- Run the offline regression suite with `python -m unittest discover -p "test_*.py" -v`.
+- CI runs the tests on each push or pull request and never crawls the live site.
+- Seven legacy test modules skip unless you provide the two **optional local** HTML fixtures. These third-party pages are **not included** in this repository. Synthetic tests and mocks run without them.
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for contributions, [SECURITY.md](SECURITY.md) for reporting vulnerabilities and [LICENSE](LICENSE) for the code license.
+
 Never commit `.env`, `data/`, SQLite databases, third-party HTML fixtures, credentials or scraped exports. See `.gitignore`.
 
 ---
 
-# GF Opti Crawler v0.8.2 — GialloZafferano / Windows
+# Installazione e utilizzo su Windows
 
-Crawler progettato e verificato per GialloZafferano, per creare un **archivio testuale strutturato di ricette** con discovery da sitemap e pagine elenco ammesse, raccolta asincrona, deduplicazione canonica, SQLite persistente, verifica della copertura e Playwright opzionale.
+Crawler per creare un **archivio testuale strutturato di ricette** con discovery da sitemap e pagine elenco ammesse, raccolta asincrona, deduplicazione canonica, SQLite persistente, verifica della copertura e Playwright opzionale.
 
 **Dati v0.8:** nessuna istruzione di preparazione, fotografia o tecnica dedotta viene conservata. Il parser legge i passaggi **solo temporaneamente in memoria** per individuare gli **utensili** e poi scarta il procedimento. Nutrizionali e valori energetici vengono **estratti dalla pagina**, non calcolati. La frequenza minima predefinita è **4 secondi per host**, salvo regole del sito più restrittive.
 
 ## Requisiti
 
 - Windows 10/11, PowerShell e Docker Desktop con backend Linux/WSL2.
-- Connessione internet per la raccolta. Le pagine HTML di terze parti utilizzate nei test offline non sono distribuite nel repository; alcuni test basati su fixture vengono saltati se i file sono assenti.
+- Connessione internet per la raccolta. Alcuni test legacy usano due pagine HTML facoltative **non distribuite**; i test indipendenti dai fixture funzionano senza quelle pagine.
 - Autorizzazione a raccogliere e utilizzare i contenuti delle fonti scelte. Il programma applica le regole `robots.txt`, non aggira blocchi e non usa rotazione di IP o identità. I 429 vengono ritentati **solo** dopo un cooldown condiviso; se persistono, la raccolta si arresta.
 
 ## 1. Installazione
@@ -79,7 +88,7 @@ Per estrarre solo le ricette già in coda, senza categoria/discovery:
 
 Il ritmo predefinito è 4 secondi fra inizi di richieste verso lo stesso host, con eventuale incremento se la fonte dichiara un intervallo più lungo. Il rate limiter è **condiviso tra i worker**: con `--delay 2` il massimo teorico resta **30 inizi di richiesta al minuto per host**, sia con 2 sia con 4 worker. Con `--workers 4` si possono sovrapporre più risposte lente e parsing, ma aumentano le richieste contemporaneamente in corso. La pipeline può avere fino a **4 worker per host** (ricette e categorie: due host diversi). Anche le richieste dei sottocomponenti Playwright ammessi sono soggette al pacing condiviso.
 
-### Retry automatico e protezione del server (v0.8.1)
+### Retry automatico e protezione del server (v0.8.1+, inclusa v0.8.2)
 
 - **HTTP 429/503:** pausa per **tutti** i worker del dominio, rispettando `Retry-After` in secondi o data HTTP. Se manca, pausa prudenziale crescente (429: 30, 60 secondi; 503: 15, 30 secondi). Il delay di base raddoppia fino a 8 volte il minimo e torna gradualmente al valore iniziale dopo 25 risposte riuscite.
 - **HTTP 500/502/504, timeout e errori di rete:** fino a 2 retry immediati aggiuntivi per richiesta, con attese esponenziali e piccolo jitter. Se falliscono, l'URL passa alla coda persistente `retry` o `failed` secondo `--max-attempts`.
@@ -103,24 +112,19 @@ I retry immediati sono automatici. I record che finiscono nella coda SQLite con 
 
 Sì, ma soltanto in RAM: viene usato per riconoscere parole come «mixer», «pentola», «teglia», «forno». Non viene persistito nel database e non compare nell'export. L'elenco degli utensili è euristico: potrebbe essere incompleto e non sostituisce una verifica umana.
 
-## Aggiornamento rapido dalla v0.8 senza perdere il database
+## Aggiornamento dalla v0.8.x senza perdere il database
 
-1. Ferma il crawler v0.8 con `Ctrl+C` e attendi la chiusura del container.
-2. Fai una copia di sicurezza dell'intera cartella `data` (inclusi eventuali file `-wal` e `-shm`).
-3. **Metodo più semplice:** estrai il pacchetto **patch v0.8.1** direttamente nella cartella v0.8, sostituendo i file con lo stesso nome; la cartella `data` non è inclusa nella patch.
-4. Ricostruisci il container perché Docker deve caricare il codice nuovo:
+1. Ferma il crawler con `Ctrl+C` e attendi l'uscita dei container; non usare due versioni contemporaneamente sullo stesso database.
+2. Esegui una copia di sicurezza **dell'intera cartella `data`**, inclusi eventuali file `-wal` e `-shm`.
+3. Scarica il codice della versione più recente da **Code → Download ZIP** di questo repository, oppure esegui `git pull` se hai già clonato il progetto. Se lavori in una **nuova cartella**, copia lì il backup di `data`; se sostituisci i **soli file sorgenti** nella cartella esistente, non sovrascrivere `data`.
+4. Ricostruisci l'immagine e verifica le statistiche, senza avviare necessariamente un nuovo crawl:
 
 ```powershell
 .\install.ps1 -Browser
+.\crawler.ps1 stats
 ```
 
-5. Riprendi la coda senza rileggere le sitemap, con 2 secondi e 4 worker per host:
-
-```powershell
-.\crawler.ps1 pipeline --skip-discovery --categories --category-limit 0 --all --workers 4 --delay 2 --browser auto
-```
-
-Se preferisci usare lo ZIP completo v0.8.1 in una nuova cartella, **copia la vecchia cartella `data`** nella nuova prima di eseguire il comando. Non eseguire contemporaneamente due istanze sullo stesso database.
+Per riprendere **solo quando autorizzato e necessario**, puoi poi usare `pipeline --skip-discovery`. Non è richiesto riscaricare le ricette già conservate per aggiornare il software.
 
 ## 4. Migrazione da v0.7 / v0.6 e pulizia vecchie ricette
 
@@ -174,7 +178,7 @@ python -m pip install -r requirements.txt
 python -m unittest discover -p "test_*.py"
 ```
 
-I test controllano le ricette campione, l'estrazione delle informazioni nutrizionali, gli utensili senza salvare il procedimento, gli alias canonici, la validazione, le code persistenti, l'audit, la scoperta asincrona e il rate limiter simulato. **Non** costituiscono un test live di tutte le pagine né una misura di performance su Docker Desktop Windows.
+I test con fixture locali controllano le ricette campione, l'estrazione delle informazioni nutrizionali, gli utensili senza salvare il procedimento, gli alias canonici, la validazione, le code persistenti, l'audit, la scoperta asincrona e il rate limiter simulato. **Senza i file HTML opzionali, parte dei test legacy viene saltata:** la CI controlla comunque le regressioni sintetiche, le simulazioni HTTP e le funzioni indipendenti dai fixture. **Non** costituiscono un test live di tutte le pagine né una misura di performance su Docker Desktop Windows.
 
 ## Architettura
 

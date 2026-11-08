@@ -2,7 +2,7 @@ services:
   crawler:
     build: .
     environment:
-      RECIPE_SCRAPER_USER_AGENT: ${RECIPE_SCRAPER_USER_AGENT:-RecipeArchiveResearchBot/0.8.1}
+      RECIPE_SCRAPER_USER_AGENT: ${RECIPE_SCRAPER_USER_AGENT:-RecipeArchiveResearchBot/0.8.2}
     volumes:
       - ./data:/app/data
     init: true
@@ -12,7 +12,7 @@ services:
       context: .
       dockerfile: Dockerfile.browser
     environment:
-      RECIPE_SCRAPER_USER_AGENT: ${RECIPE_SCRAPER_USER_AGENT:-RecipeArchiveResearchBot/0.8.1}
+      RECIPE_SCRAPER_USER_AGENT: ${RECIPE_SCRAPER_USER_AGENT:-RecipeArchiveResearchBot/0.8.2}
     volumes:
       - ./data:/app/data
     init: true
